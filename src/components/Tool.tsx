@@ -1,12 +1,12 @@
 
-
-// 2nd:
-
+import "@recogito/annotorious-openseadragon/dist/annotorious.min.css";
 import OpenSeadragon from "openseadragon";
 import React, { useContext, useEffect, useState } from "react";
 import * as _ from "underscore";
 import { ToolProps } from "./helpers/Interfaces";
 import AppContext from "./hooks/createContext";
+
+import "@recogito/annotorious-openseadragon/dist/annotorious.min.css";
 interface BoundingBox {
   minX: number;
   minY: number;
@@ -24,21 +24,25 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
   const [boundingBox, setBoundingBox] = useState<BoundingBox | null>(null);
 
   useEffect(() => {
+    console.log(location.origin);
     if (image) {
-      if (viewerRef.current) {
-        viewerRef.current = null;
-      }
       const viewer = OpenSeadragon({
         id: "openseadragon-viewer",
-        // prefixUrl: "/assets/new_image_files/",
-        // tileSources: "/assets/newimage.dzi",
+        // prefixUrl: "/assets/newfinal_files/",
+        // tileSources: "/assets/newfinal.dzi",
+
         prefixUrl: "/assets/image_files/",
         tileSources: "/assets/image.dzi",
+
+        // prefixUrl: "/assets/new_image_files/",
+        // tileSources: "/assets/newimage.dzi",
       });
       viewerRef.current = viewer;
 
       viewer.addHandler("canvas-click", (event: any) => {
-        handleMouseClick(viewerRef, event, 'osd');
+        // console.log(event.position, "event.position use effect");
+        // console.log();
+        handleMouseClick(viewerRef, event, "osd");
       });
     }
 
@@ -48,7 +52,6 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
       }
     };
   }, [image]);
-
 
   useEffect(() => {
     // Render bounding box whenever maskImg changes
@@ -124,8 +127,10 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
 
     // Render bounding box
     return {
-      minX: minX + 130,
-      minY: minY - 90,
+      minX: minX + 310,
+      minY: minY + 5,
+      // minY: minY - 5,
+      // minX: minX + 375,
       width,
       height,
     };
@@ -150,14 +155,12 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
       <br />
       <div
         id="openseadragon-viewer"
-        onClick={(e) => handleMouseClick(viewerRef, e, 'osd')}
+        onClick={(e) => handleMouseClick(viewerRef, e, "osd")}
         onMouseOut={() => _.defer(() => setMaskImg(null))}
-        onTouchStart={(e) => handleMouseClick(viewerRef, e, 'osd')}
+        onTouchStart={(e) => handleMouseClick(viewerRef, e, "osd")}
         style={{ width: "500px", height: "200px" }}
       >
-      </div>
-
-      {boundingBox &&
+        {boundingBox && (
           <div
             style={{
               position: "absolute",
@@ -168,7 +171,8 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
               border: "2px solid red",
             }}
           ></div>
-      }
+        )}
+      </div>
 
       {maskImg && (
         <img
