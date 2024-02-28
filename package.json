@@ -53,6 +53,7 @@
     "webpack-merge": "^5.8.0"
   },
   "dependencies": {
+    "@recogito/annotorious-openseadragon": "^2.7.17",
     "@types/openseadragon": "^3.0.10",
     "npyjs": "^0.6.0",
     "onnxruntime-web": "^1.17.0",
