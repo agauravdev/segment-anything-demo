@@ -1,10 +1,10 @@
 
-import "@recogito/annotorious-openseadragon/dist/annotorious.min.css";
 import OpenSeadragon from "openseadragon";
 import React, { useContext, useEffect, useState } from "react";
 import * as _ from "underscore";
 import { ToolProps } from "./helpers/Interfaces";
 import AppContext from "./hooks/createContext";
+import Annotorious from "@recogito/annotorious-openseadragon";
 
 import "@recogito/annotorious-openseadragon/dist/annotorious.min.css";
 interface BoundingBox {
@@ -24,7 +24,6 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
   const [boundingBox, setBoundingBox] = useState<BoundingBox | null>(null);
 
   useEffect(() => {
-    console.log(location.origin);
     if (image) {
       const viewer = OpenSeadragon({
         id: "openseadragon-viewer",
@@ -44,6 +43,27 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
         // console.log();
         handleMouseClick(viewerRef, event, "osd");
       });
+
+      const config = {
+        disableEditor: true,
+        readOnly: false,
+        widgets: [],
+      };
+
+      const annotorious = Annotorious(viewer, config);
+      const w3cAnno = {
+        id: 1,
+        type: 'Annotation',
+        target: {
+          selector: {
+            conformsTo: 'http://www.w3.org/TR/media-frags/',
+            type: 'FragmentSelector',
+            value: `xywh=pixel:${200},${200},${100},${100}`, // Top, Left, Width, Height
+          }
+        }
+      }
+
+      annotorious.addAnnotation(w3cAnno, true);
     }
 
     return () => {

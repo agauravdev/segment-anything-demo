@@ -30,5 +30,4 @@ export interface ToolProps {
     e: any,
     target?: string,
   ) => void;
-  viewerRef: React.RefObject<OpenSeadragon.Viewer | null>;
 }
