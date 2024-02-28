@@ -38,7 +38,7 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
       viewerRef.current = viewer;
 
       viewer.addHandler("canvas-click", (event: any) => {
-        handleMouseClick(viewerRef, event);
+        handleMouseClick(viewerRef, event, 'osd');
       });
     }
 
@@ -47,7 +47,9 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
         viewerRef.current = null;
       }
     };
-  }, [image, handleMouseClick, maskImg]);
+  }, [image]);
+
+
   useEffect(() => {
     // Render bounding box whenever maskImg changes
     if (maskImg) {
@@ -148,12 +150,14 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
       <br />
       <div
         id="openseadragon-viewer"
-        onClick={(e) => handleMouseClick(viewerRef, e)}
+        onClick={(e) => handleMouseClick(viewerRef, e, 'osd')}
         onMouseOut={() => _.defer(() => setMaskImg(null))}
-        onTouchStart={(e) => handleMouseClick(viewerRef, e)}
+        onTouchStart={(e) => handleMouseClick(viewerRef, e, 'osd')}
         style={{ width: "500px", height: "200px" }}
       >
-        {boundingBox && (
+      </div>
+
+      {boundingBox &&
           <div
             style={{
               position: "absolute",
@@ -164,8 +168,7 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
               border: "2px solid red",
             }}
           ></div>
-        )}
-      </div>
+      }
 
       {maskImg && (
         <img

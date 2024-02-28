@@ -27,7 +27,8 @@ export interface modeDataProps {
 export interface ToolProps {
   handleMouseClick: (
     viewerRef: React.RefObject<OpenSeadragon.Viewer>,
-    e: any
+    e: any,
+    target?: string,
   ) => void;
   viewerRef: React.RefObject<OpenSeadragon.Viewer | null>;
 }

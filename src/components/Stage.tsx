@@ -7,6 +7,7 @@ import { modelInputProps } from "./helpers/Interfaces";
 import AppContext from "./hooks/createContext";
 
 import OpenSeadragon from "openseadragon";
+
 const Stage = () => {
   const {
     clicks: [, setClicks],
@@ -25,13 +26,14 @@ const Stage = () => {
 
   const handleMouseClick = (
     viewerRef: React.RefObject<OpenSeadragon.Viewer>,
-    e: any
+    e: any,
+    click_target: string = ''
   ) => {
     let el = e.target;
     if (el) {
       let x, y;
       // Check if the click was on the OpenSeadragon viewer
-      if (el.id === "openseadragon-viewer" && viewerRef.current) {
+      if (click_target === 'osd' && viewerRef.current) {
         console.log("click on osd");
         // Get the click coordinates relative to the viewer
         const rect = viewerRef.current.element.getBoundingClientRect();
