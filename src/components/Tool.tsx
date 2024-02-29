@@ -19,9 +19,13 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
     maskImg: [maskImg, setMaskImg],
     tiledImage: [tiledImage],
   } = useContext(AppContext)!;
+
   const viewerRef = React.useRef<OpenSeadragon.Viewer | null>(null);
+  const annotoriousRef = React.useRef(null);
+
   const [boundingBox, setBoundingBox] = useState<BoundingBox | null>(null);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+
   useEffect(() => {
     const img = new Image();
     img.src = "/assets/data/newfinal.jpg";
@@ -29,7 +33,7 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
       setImageSize({ width: img.width, height: img.height });
     };
   }, []);
-  console.log(imageSize);
+
 
   const renderBoundingBox = () => {
     if (!maskImg) return null; // If mask image is not available, return null
@@ -49,7 +53,6 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
     let minY = canvas.height;
     let maxX = 0;
     let maxY = 0;
-    console.log("mixX:", minX, "minY:", minY);
     // Iterate over the pixels to find bounding box coordinates
     for (let y = 0; y < canvas.height; y++) {
       for (let x = 0; x < canvas.width; x++) {
@@ -64,12 +67,10 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
         }
       }
     }
-    console.log("mixX:", minX, "minY:", minY);
     // Calculate width and height of bounding box
     const width = maxX - minX;
     const height = maxY - minY;
 
-    console.log("maskwidth", width, "maskheight", height);
     // Render bounding box
     return {
       minX,
@@ -80,8 +81,8 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
     };
   };
 
+  // Initialize the OSD viewer
   useEffect(() => {
-    console.log(location.origin);
     if (image) {
       const viewer = OpenSeadragon({
         id: "openseadragon-viewer",
@@ -93,75 +94,89 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
 
         // prefixUrl: "/assets/new_image_files/",
         // tileSources: "/assets/newimage.dzi",
+
+        gestureSettingsMouse: {
+          clickToZoom: false
+        }
       });
       viewerRef.current = viewer;
 
       viewer.addHandler("canvas-click", (event: any) => {
-        console.log(event.position, "event.position use effect");
-        console.log();
         handleMouseClick(viewerRef, event, "osd");
       });
-      if (boundingBox) {
-        const { minX, minY, width, height } = boundingBox;
-        const config = {
-          disableEditor: true,
-          readOnly: false,
-          widgets: [],
-        };
-        const point: OpenSeadragon.Point = new OpenSeadragon.Point(
-          boundingBox.minX,
-          boundingBox.minY
-        );
-        const viewPixel = viewer.viewport.pixelFromPoint(point);
 
-        console.log("boundingBox", boundingBox);
-        const point1 = viewer.viewport.imageToViewportCoordinates(point);
+      const config = {
+        disableEditor: true,
+        readOnly: false,
+        widgets: [],
+      };
 
-        const point2 = viewer.viewport.imageToViewportCoordinates(
-          minX + width,
-          minY + height
-        );
-        console.log("point1", point1, "point2", point2);
-
-        const viewerMinX = point1.x;
-        const viewerMinY = point1.y;
-        const viewerWidth = point2.x;
-        const viewerHeight = point2.y;
-
-        const annotorious = Annotorious(viewer, config);
-
-        const w3cAnno = {
-          id: 1,
-          type: "Annotation",
-          target: {
-            selector: {
-              conformsTo: "http://www.w3.org/TR/media-frags/",
-              type: "FragmentSelector",
-              // value: `xywh=pixel:${boundingBox.minX + 1750},${
-              //   boundingBox.minY + 750
-              // },${boundingBox.width + 600},${boundingBox.height + 400}`,
-
-              // value: `xywh=pixel:${441 + 1750},${191 + 750},${152 + 600},${
-              //   106 + 400
-              // }`,
-
-              // value: minX,minY,fwidth,fheight
-
-              value: `xywh=pixel:${viewerMinX},${viewerMinY},${viewerWidth},${viewerHeight}`,
-              // left, top, Width, Height
-            },
-          },
-        };
-
-        annotorious.addAnnotation(w3cAnno, true);
-      }
+      // init annnotorious
+      annotoriousRef.current = Annotorious(viewer, config);
     }
     return () => {
       if (viewerRef.current) {
         viewerRef.current = null;
       }
     };
-  }, [image, boundingBox]);
+  }, [image]);
+
+
+  // Render bbox on OSD whenever segmentation happens
+  useEffect(() => {
+
+    if (!boundingBox) {
+      return;
+    }
+
+    const viewer = viewerRef.current as OpenSeadragon.Viewer;
+
+    const { minX, minY, width, height } = boundingBox;
+
+    const point: OpenSeadragon.Point = new OpenSeadragon.Point(
+      boundingBox.minX,
+      boundingBox.minY
+    );
+    const viewPixel = viewer.viewport.pixelFromPoint(point);
+
+    console.log("boundingBox", boundingBox);
+    const point1 = viewer.viewport.imageToViewportCoordinates(point);
+
+    const point2 = viewer.viewport.imageToViewportCoordinates(
+      minX + width,
+      minY + height
+    );
+
+    console.log("point1", point1, "point2", point2);
+
+    const viewerMinX = point1.x;
+    const viewerMinY = point1.y;
+    const viewerWidth = point2.x;
+    const viewerHeight = point2.y;
+
+    const annotorious = annotoriousRef.current! as any;
+
+    const w3cAnno = {
+      id: Date.now(),
+      type: "Annotation",
+      target: {
+        selector: {
+          conformsTo: "http://www.w3.org/TR/media-frags/",
+          type: "FragmentSelector",
+          value: `xywh=pixel:${boundingBox.minX + 1750},${
+            boundingBox.minY + 750
+          },${boundingBox.width + 600},${boundingBox.height + 400}`,
+
+          // value: `xywh=pixel:${viewerMinX},${viewerMinY},${viewerWidth},${viewerHeight}`,
+          // left, top, Width, Height
+        },
+      },
+    };
+
+    annotorious.clearAnnotations();
+    annotorious.addAnnotation(w3cAnno, true);
+
+  }, [boundingBox]);
 
   useEffect(() => {
     // Render bounding box whenever maskImg changes
@@ -169,12 +184,14 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
       setBoundingBox(renderBoundingBox());
     }
   }, [maskImg]);
+
   // Determine if we should shrink or grow the images to match the
   // width or the height of the page and setup a ResizeObserver to
   // monitor changes in the size of the page
 
   const [shouldFitToWidth, setShouldFitToWidth] = useState(true);
   const bodyEl = document.body;
+
   const fitToPage = () => {
     if (!image) return;
     const imageAspectRatio = image.width / image.height;
@@ -216,9 +233,6 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
           ></img>
           {boundingBox && (
             <>
-              {console.log(
-                `Top: ${boundingBox.minY}px, Left: ${boundingBox.minX}px, Width: ${boundingBox.width}px, Height: ${boundingBox.height}px`
-              )}
               <div
                 style={{
                   position: "absolute",
@@ -240,14 +254,11 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
         onClick={(e) => handleMouseClick(viewerRef, e, "osd")}
         onMouseOut={() => _.defer(() => setMaskImg(null))}
         onTouchStart={(e) => handleMouseClick(viewerRef, e, "osd")}
-        style={{ width: "500px", height: "200px" }}
+        style={{ width: "800px", height: "400px" }}
       ></div>
 
       {maskImg && (
         <>
-          {console.log(
-            `TopMask: ${maskImg.offsetTop}px, LeftMask: ${maskImg.offsetLeft}px, Width: ${maskImg.offsetWidth}px, Height: ${maskImg.offsetHeight}px`
-          )}
           <img
             src={maskImg.src}
             className="absolute opacity-40 pointer-events-none"

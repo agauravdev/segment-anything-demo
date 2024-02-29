@@ -19,11 +19,11 @@ import npyjs from "npyjs";
 
 // Define image, embedding and model paths
 
-const IMAGE_PATH = "/assets/data/image.jpg";
-const IMAGE_EMBEDDING = "/assets/data/image_embeddings.npy";
+// const IMAGE_PATH = "/assets/data/image.jpg";
+// const IMAGE_EMBEDDING = "/assets/data/image_embeddings.npy";
 
-// const IMAGE_PATH = "/assets/data/newfinal.jpg";
-// const IMAGE_EMBEDDING = "/assets/data/temp_embedding_newfinal.npy";
+const IMAGE_PATH = "/assets/data/newfinal.jpg";
+const IMAGE_EMBEDDING = "/assets/data/temp_embedding_newfinal.npy";
 
 // const IMAGE_PATH = "/assets/data/newimage.jpg";
 // const IMAGE_EMBEDDING = "/assets/data/temp_embedding_image.npy";
