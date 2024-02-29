@@ -82,6 +82,9 @@ const App = () => {
       img.src = url.href;
       img.onload = () => {
         const { height, width, samScale } = handleImageScale(img);
+
+        console.log("Source image width and height and scale:", width, height, samScale)
+
         setModelScale({
           height: height, // original image height
           width: width, // original image width

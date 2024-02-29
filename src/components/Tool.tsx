@@ -131,28 +131,18 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
 
     const viewer = viewerRef.current as OpenSeadragon.Viewer;
 
+    const tiledImage = viewer.world.getItemAt(0); // Assuming you're interested in the first image
+
     const { minX, minY, width, height } = boundingBox;
 
-    const point: OpenSeadragon.Point = new OpenSeadragon.Point(
-      boundingBox.minX,
-      boundingBox.minY
-    );
-    const viewPixel = viewer.viewport.pixelFromPoint(point);
+    // Note: Ideally source image and tiled image should have same resolution
+    const SOURCE_IMG_NATURAL_WIDTH = image?.width!;
+    const SOURCE_IMG_NATURAL_HEIGHT = image?.height!;
+    const TILED_IMG_WIDTH = tiledImage.source.dimensions.x
+    const TILED_IMG_HEIGHT = tiledImage.source.dimensions.y
 
-    console.log("boundingBox", boundingBox);
-    const point1 = viewer.viewport.imageToViewportCoordinates(point);
-
-    const point2 = viewer.viewport.imageToViewportCoordinates(
-      minX + width,
-      minY + height
-    );
-
-    console.log("point1", point1, "point2", point2);
-
-    const viewerMinX = point1.x;
-    const viewerMinY = point1.y;
-    const viewerWidth = point2.x;
-    const viewerHeight = point2.y;
+    const scaleX = TILED_IMG_WIDTH/SOURCE_IMG_NATURAL_WIDTH;
+    const scaleY = TILED_IMG_HEIGHT/SOURCE_IMG_NATURAL_HEIGHT;
 
     const annotorious = annotoriousRef.current! as any;
 
@@ -163,12 +153,7 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
         selector: {
           conformsTo: "http://www.w3.org/TR/media-frags/",
           type: "FragmentSelector",
-          value: `xywh=pixel:${boundingBox.minX + 1750},${
-            boundingBox.minY + 750
-          },${boundingBox.width + 600},${boundingBox.height + 400}`,
-
-          // value: `xywh=pixel:${viewerMinX},${viewerMinY},${viewerWidth},${viewerHeight}`,
-          // left, top, Width, Height
+          value:`xywh=pixel:${minX * scaleX}, ${minY * scaleY}, ${ width * scaleX}, ${height * scaleY}`
         },
       },
     };
