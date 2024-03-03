@@ -1,5 +1,6 @@
 import Annotorious from "@recogito/annotorious-openseadragon";
 import "@recogito/annotorious-openseadragon/dist/annotorious.min.css";
+import { useOpenCv } from "opencv-react-ts";
 import OpenSeadragon from "openseadragon";
 import React, { useContext, useEffect, useState } from "react";
 import * as _ from "underscore";
@@ -14,6 +15,8 @@ interface BoundingBox {
 }
 
 const Tool = ({ handleMouseClick }: ToolProps) => {
+  const { cv } = useOpenCv();
+  console.log(cv, "opencv");
   const {
     image: [image],
     maskImg: [maskImg, setMaskImg],
@@ -33,7 +36,6 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
       setImageSize({ width: img.width, height: img.height });
     };
   }, []);
-
 
   const renderBoundingBox = () => {
     if (!maskImg) return null; // If mask image is not available, return null
@@ -96,8 +98,8 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
         // tileSources: "/assets/newimage.dzi",
 
         gestureSettingsMouse: {
-          clickToZoom: false
-        }
+          clickToZoom: false,
+        },
       });
       viewerRef.current = viewer;
 
@@ -121,10 +123,8 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
     };
   }, [image]);
 
-
   // Render bbox on OSD whenever segmentation happens
   useEffect(() => {
-
     if (!boundingBox) {
       return;
     }
@@ -138,11 +138,11 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
     // Note: Ideally source image and tiled image should have same resolution
     const SOURCE_IMG_NATURAL_WIDTH = image?.width!;
     const SOURCE_IMG_NATURAL_HEIGHT = image?.height!;
-    const TILED_IMG_WIDTH = tiledImage.source.dimensions.x
-    const TILED_IMG_HEIGHT = tiledImage.source.dimensions.y
+    const TILED_IMG_WIDTH = tiledImage.source.dimensions.x;
+    const TILED_IMG_HEIGHT = tiledImage.source.dimensions.y;
 
-    const scaleX = TILED_IMG_WIDTH/SOURCE_IMG_NATURAL_WIDTH;
-    const scaleY = TILED_IMG_HEIGHT/SOURCE_IMG_NATURAL_HEIGHT;
+    const scaleX = TILED_IMG_WIDTH / SOURCE_IMG_NATURAL_WIDTH;
+    const scaleY = TILED_IMG_HEIGHT / SOURCE_IMG_NATURAL_HEIGHT;
 
     const annotorious = annotoriousRef.current! as any;
 
@@ -153,14 +153,15 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
         selector: {
           conformsTo: "http://www.w3.org/TR/media-frags/",
           type: "FragmentSelector",
-          value:`xywh=pixel:${minX * scaleX}, ${minY * scaleY}, ${ width * scaleX}, ${height * scaleY}`
+          value: `xywh=pixel:${minX * scaleX}, ${minY * scaleY}, ${
+            width * scaleX
+          }, ${height * scaleY}`,
         },
       },
     };
 
     annotorious.clearAnnotations();
     annotorious.addAnnotation(w3cAnno, true);
-
   }, [boundingBox]);
 
   useEffect(() => {
