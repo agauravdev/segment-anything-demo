@@ -6,6 +6,7 @@ import Tool from "./Tool";
 import { modelInputProps } from "./helpers/Interfaces";
 import AppContext from "./hooks/createContext";
 
+import { OpenCvProvider } from "opencv-react-ts";
 import OpenSeadragon from "openseadragon";
 const Stage = () => {
   const {
@@ -64,7 +65,6 @@ const Stage = () => {
         // console.log(zoom, "zoom");
         // x /= zoom;
         // y /= zoom;
-
       } else {
         // Handle click on the image (as before)
         const rect = el.getBoundingClientRect();
@@ -84,7 +84,9 @@ const Stage = () => {
   return (
     <div className={`${flexCenterClasses} w-full h-full`}>
       <div className={`${flexCenterClasses} relative w-[90%] h-[90%]`}>
-        <Tool handleMouseClick={handleMouseClick} />
+        <OpenCvProvider openCvPath="/opencv/opencv.js">
+          <Tool handleMouseClick={handleMouseClick} />
+        </OpenCvProvider>
       </div>
     </div>
   );
