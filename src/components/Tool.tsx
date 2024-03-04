@@ -15,8 +15,7 @@ interface BoundingBox {
 }
 
 const Tool = ({ handleMouseClick }: ToolProps) => {
-  const { cv } = useOpenCv();
-  console.log(cv, "opencv");
+  const { loaded: cvLoaded, cv } = useOpenCv();
   const {
     image: [image],
     maskImg: [maskImg, setMaskImg],
@@ -28,14 +27,76 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
 
   const [boundingBox, setBoundingBox] = useState<BoundingBox | null>(null);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [localCoords, setLocalCoords] = useState<any>([]);
+
+  const findContourPolygon = (maskImg: HTMLImageElement) => {
+    const chunk = (array: string | any[], size: number) => {
+      const chunked_arr = [];
+      let index = 0;
+      while (index < array.length) {
+        chunked_arr.push(array.slice(index, size + index));
+        index += size;
+      }
+      return chunked_arr;
+    };
+    if (cvLoaded && cv) {
+      const src = cv.imread(maskImg);
+      const dst = cv.Mat.zeros(src.rows, src.cols, cv.CV_8UC3);
+      const color = new cv.Scalar(255, 255, 255); // white color
+
+      // Convert to grayscale & threshold
+      cv.cvtColor(src, src, cv.COLOR_RGB2GRAY, 0);
+      cv.threshold(src, src, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
+
+      // Find contours
+      const contours = new cv.MatVector();
+      const hierarchy = new cv.Mat();
+      cv.findContours(
+        src,
+        contours,
+        hierarchy,
+        cv.RETR_CCOMP,
+        cv.CHAIN_APPROX_NONE
+      );
+
+      let largestAreaPolygon = { area: 0, polygon: new cv.Mat() };
+      //@ts-ignore
+      for (let i = 0; i < contours.size(); ++i) {
+        const polygon = new cv.Mat();
+        const contour = contours.get(i);
+
+        cv.approxPolyDP(contour, polygon, 1, true);
+
+        // Compute contour areas
+        const area = cv.contourArea(polygon);
+        if (area > largestAreaPolygon.area)
+          largestAreaPolygon = { area, polygon };
+        contour.delete();
+      }
+
+      const localCoords = chunk(
+        Array.from(largestAreaPolygon.polygon.data32S),
+        2
+      );
+      setLocalCoords(localCoords);
+      return localCoords;
+    }
+  };
 
   useEffect(() => {
-    const img = new Image();
-    img.src = "/assets/data/newfinal.jpg";
-    img.onload = () => {
-      setImageSize({ width: img.width, height: img.height });
-    };
-  }, []);
+    if (cvLoaded && cv) {
+      console.log("LOADED OPENCV");
+      if (!maskImg) return;
+
+      const maskImage = new Image();
+      maskImage.onload = () => {
+        //starts:
+        const localCoords = findContourPolygon(maskImage);
+        console.log("localCoords", localCoords);
+      };
+      maskImage.src = maskImg.src;
+    }
+  }, [cvLoaded, maskImg]);
 
   const renderBoundingBox = () => {
     if (!maskImg) return null; // If mask image is not available, return null
@@ -145,6 +206,12 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
     const scaleY = TILED_IMG_HEIGHT / SOURCE_IMG_NATURAL_HEIGHT;
 
     const annotorious = annotoriousRef.current! as any;
+    const points = localCoords
+      .map((localCoords: any[]) =>
+        [localCoords[0] * scaleX, localCoords[1] * scaleY].join(",")
+      )
+      .join(" ");
+    console.log(points, "points");
 
     const w3cAnno = {
       id: Date.now(),
@@ -152,17 +219,19 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
       target: {
         selector: {
           conformsTo: "http://www.w3.org/TR/media-frags/",
-          type: "FragmentSelector",
-          value: `xywh=pixel:${minX * scaleX}, ${minY * scaleY}, ${
-            width * scaleX
-          }, ${height * scaleY}`,
+          // type: "FragmentSelector",
+          // value: `xywh=pixel:${minX * scaleX}, ${minY * scaleY}, ${
+          //   width * scaleX
+          // }, ${height * scaleY}`,
+          type: "SvgSelector",
+          value: `<svg><polygon points='${points}'></polygon></svg>`,
         },
       },
     };
-
+    console.log(localCoords, "localCoords");
     annotorious.clearAnnotations();
     annotorious.addAnnotation(w3cAnno, true);
-  }, [boundingBox]);
+  }, [boundingBox, localCoords]);
 
   useEffect(() => {
     // Render bounding box whenever maskImg changes
@@ -238,19 +307,19 @@ const Tool = ({ handleMouseClick }: ToolProps) => {
       <div
         id="openseadragon-viewer"
         onClick={(e) => handleMouseClick(viewerRef, e, "osd")}
-        onMouseOut={() => _.defer(() => setMaskImg(null))}
+        // onMouseOut={() => _.defer(() => setMaskImg(null))}
         onTouchStart={(e) => handleMouseClick(viewerRef, e, "osd")}
         style={{ width: "800px", height: "400px" }}
       ></div>
-
+      {/* 
       {maskImg && (
         <>
           <img
             src={maskImg.src}
-            className="absolute opacity-40 pointer-events-none"
+            // className="absolute opacity-40 pointer-events-none"
           ></img>
         </>
-      )}
+      )} */}
     </div>
   );
 };
