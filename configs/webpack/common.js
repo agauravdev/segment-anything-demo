@@ -72,6 +72,10 @@ module.exports = {
           to: "model",
         },
         {
+          from: "opencv",
+          to: "opencv",
+        },
+        {
           from: "src/assets",
           to: "assets",
         },
