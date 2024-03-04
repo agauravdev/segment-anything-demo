@@ -118,6 +118,11 @@ const App = () => {
       else {
         // Prepre the model input in the correct format for SAM.
         // The modelData function is from onnxModelAPI.tsx.
+        console.log({
+          clicks,
+          tensor,
+          modelScale,
+        })
         const feeds = modelData({
           clicks,
           tensor,
